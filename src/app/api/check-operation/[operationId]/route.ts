@@ -4,11 +4,11 @@ import { NextRequest, NextResponse } from 'next/server';
 const operations = new Map<string, any>();
 
 export async function GET(
-  request: NextRequest,
-  { params }: { params: { operationId: string } }
+  _request: NextRequest,
+  { params }: { params: Promise<{ operationId: string }> }
 ) {
   try {
-    const { operationId } = params;
+    const { operationId } = await params;
     const operationData = operations.get(operationId);
 
     if (!operationData) {
