@@ -1,0 +1,1 @@
+export const operations = new Map<string, any>();

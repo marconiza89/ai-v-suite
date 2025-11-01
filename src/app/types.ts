@@ -41,6 +41,7 @@ export interface VideoFile {
 }
 
 export interface GenerateVideoParams {
+  
   prompt: string;
   model: VeoModel;
   aspectRatio: AspectRatio;

@@ -1,4 +1,4 @@
-// src/app/page.tsx
+// src/app/page.tsx Una cocinella vola verso un fiore, la telecamera la segue da dietro con una ripresa MACRO dinamica
 "use client";
 
 import { Video } from '@google/genai';

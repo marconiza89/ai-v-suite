@@ -3,12 +3,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenAI, VideoGenerationReferenceImage, VideoGenerationReferenceType } from '@google/genai';
 import { GenerationMode } from '@/app/types';
 
-const operations = new Map<string, any>();
+const operations = new Map<string, any>(); // può restare, ma non verrà usata
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
-    
+
     const prompt = formData.get('prompt') as string;
     const model = formData.get('model') as string;
     const aspectRatio = formData.get('aspectRatio') as string;
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
 
       const endFrameFile = formData.get('endFrame') as File | null;
       const finalEndFrame = isLooping ? startFrameFile : endFrameFile;
-      
+
       if (finalEndFrame) {
         const endFrameBytes = Buffer.from(await finalEndFrame.arrayBuffer()).toString('base64');
         generateVideoPayload.config.lastFrame = {
@@ -103,15 +103,9 @@ export async function POST(request: NextRequest) {
     }
 
     const operation = await ai.models.generateVideos(generateVideoPayload);
-    const operationId = crypto.randomUUID();
-    
-    operations.set(operationId, {
-      operation,
-      ai,
-      apiKey,
-    });
 
-    return NextResponse.json({ operationId });
+    // Invia al client l'ID reale dell'operazione (name) invece di un UUID locale
+    return NextResponse.json({ operationId: operation.name });
   } catch (error) {
     console.error('Error generating video:', error);
     return NextResponse.json(
