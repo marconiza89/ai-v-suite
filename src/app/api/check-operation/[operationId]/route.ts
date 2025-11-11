@@ -1,26 +1,32 @@
+// src/app/api/check-operation/[operationId]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { GoogleGenAI, type GenerateVideosOperation } from '@google/genai';
+import { operations } from '@/lib/operations-store';
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { operationId: string } }
+  { params }: { params: Promise<{ operationId: string }> }
 ) {
   try {
-    const { operationId } = params;
+    const { operationId } = await params;
+    const operationData = operations.get(operationId);
 
-    const apiKey = process.env.GOOGLE_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json({ error: 'API key not configured' }, { status: 500 });
+    if (!operationData) {
+      return NextResponse.json({ error: 'Operation not found' }, { status: 404 });
     }
 
-    const ai = new GoogleGenAI({ apiKey });
-    const opRef = { name: operationId } as unknown as GenerateVideosOperation;
-    const updatedOperation = await ai.operations.getVideosOperation({ operation: opRef });
+    const { operation: currentOp, ai, apiKey } = operationData;
+    const updatedOperation = await ai.operations.getVideosOperation({ operation: currentOp });
+
+    operations.set(operationId, {
+      operation: updatedOperation,
+      ai,
+      apiKey,
+    });
 
     if (updatedOperation.done) {
       if (updatedOperation.response) {
         const videos = updatedOperation.response.generatedVideos;
-
+        
         if (!videos || videos.length === 0) {
           return NextResponse.json({ error: 'No videos generated' }, { status: 500 });
         }
@@ -31,8 +37,10 @@ export async function GET(
         }
 
         const videoObject = firstVideo.video;
-        const url = decodeURIComponent(videoObject.uri!);
-        const videoUrl = url.includes('?') ? `${url}&key=${apiKey}` : `${url}?key=${apiKey}`;
+        const url = decodeURIComponent(videoObject.uri);
+        const videoUrl = `${url}&key=${apiKey}`;
+
+        operations.delete(operationId);
 
         return NextResponse.json({
           done: true,
@@ -40,6 +48,7 @@ export async function GET(
           videoObject,
         });
       } else {
+        operations.delete(operationId);
         return NextResponse.json({ done: true, error: 'No videos generated' });
       }
     }
